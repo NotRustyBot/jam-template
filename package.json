@@ -1,0 +1,25 @@
+{
+  "name": "__GAME_NAME__",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "bundle": "node bundler.ts",
+    "dev": "vite --host",
+    "build": "tsc && vite build",
+    "upload": "npm run build && 7z a -tzip static.zip .\\dist\\* && butler push static.zip NotRustyBot/__GAME_NAME__:web",
+    "preview": "vite preview",
+    "setup": "node setup.mjs"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.13",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0"
+  },
+  "dependencies": {
+    "howler": "^2.2.4",
+    "pixi-filters": "^6.1.5",
+    "pixi.js": "^8.19.0",
+    "random": "^5.4.1"
+  }
+}
