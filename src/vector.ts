@@ -10,6 +10,8 @@ export class Vector {
         this.y = y;
     }
 
+    static instance = new Vector();
+
     static zero(): Vector {
         return new Vector(0, 0);
     }
@@ -35,7 +37,8 @@ export class Vector {
     rotate(angle: number): Vector {
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
-        return new Vector(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+        this.set(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+        return this;
     }
 
     length(): number {
