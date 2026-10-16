@@ -1,0 +1,128 @@
+.editor-ui {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 260px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: rgba(18, 18, 22, 0.92);
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #e6e6e6;
+  font: 12px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+  z-index: 1000;
+  user-select: none;
+}
+
+.editor-header,
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.editor-title {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #7fe3ff;
+  flex: 1;
+}
+
+.editor-level {
+  width: 80px;
+  padding: 3px 6px;
+  background: #0d0d10;
+  color: #e6e6e6;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.editor-btn {
+  padding: 3px 8px;
+  background: #23232b;
+  color: #e6e6e6;
+  border: 1px solid #3a3a44;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.editor-btn:hover {
+  background: #2f2f3a;
+}
+
+.editor-btn.danger {
+  border-color: #7a2b2b;
+  color: #ff9d9d;
+}
+
+.editor-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.editor-palette-btn {
+  padding: 4px 8px;
+  background: #1b2b33;
+  color: #9fe8ff;
+  border: 1px solid #2b4a57;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.editor-palette-btn:hover {
+  background: #233a45;
+}
+
+.editor-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-empty {
+  color: #777;
+  font-style: italic;
+}
+
+.editor-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.editor-field-name {
+  color: #b8b8c2;
+  flex: 0 0 auto;
+}
+
+.editor-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 6px;
+  background: #0d0d10;
+  color: #e6e6e6;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.editor-input[type="checkbox"] {
+  flex: 0 0 auto;
+}
+
+.editor-status {
+  margin-left: auto;
+  color: #8fe88f;
+}
+
+.editor-hint {
+  color: #6a6a76;
+  font-size: 10px;
+}

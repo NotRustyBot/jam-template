@@ -4,7 +4,10 @@
 const bundle = {
   name: "bundle",
   assets: [
-
+    {
+      alias: "circle",
+      src: "./img/circle.png"
+    }
   ]
 } as const;
 

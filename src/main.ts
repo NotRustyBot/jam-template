@@ -4,7 +4,8 @@ import bundle from './bundle';
 import bundle_sound from './bundle_sound';
 import { Game } from './game';
 import { Howl } from "howler"
-
+import './objects';
+import { loadWorld, spawnWorld } from './world';
 
 async function main() {
     const app = new Application();
@@ -21,6 +22,14 @@ async function main() {
     document.body.appendChild(app.canvas);
     const game = new Game(app);
     game.init();
+
+    const world = await loadWorld();
+    const spawned = spawnWorld(world);
+
+    if (import.meta.env.DEV) {
+        const { startEditor } = await import("./editor");
+        startEditor(world, spawned);
+    }
 }
 
 main();

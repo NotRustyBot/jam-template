@@ -1,0 +1,18 @@
+{
+  "name": "default",
+  "objects": [
+    {
+      "id": "2bfb0e20-44b4-42a7-9fc5-240291e491e3",
+      "type": "prop",
+      "props": {
+        "x": -16,
+        "y": -80,
+        "image": "circle",
+        "scale": 1,
+        "flipX": false,
+        "tint": "#ffffff",
+        "depth": "entity"
+      }
+    }
+  ]
+}
