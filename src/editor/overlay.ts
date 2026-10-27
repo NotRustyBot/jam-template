@@ -1,6 +1,6 @@
 import bundle from "../bundle";
 import { getRegisteredClasses, type PropSchema } from "../gameObject";
-import { game } from "../game";
+import { game, type LayerName } from "../game";
 import type { WorldObject } from "../world";
 import type { Editor } from "./state";
 
@@ -70,12 +70,47 @@ export function createOverlay(editor: Editor): Overlay {
         palette.appendChild(btn);
     }
     root.appendChild(palette);
+
+    const layers = el("div", "editor-layers");
+    const layerToggles: Array<{ name: LayerName; input: HTMLInputElement }> = [];
+
+    const layersHeader = el("div", "editor-header");
+    layersHeader.appendChild(el("span", "editor-title", "Layers"));
+
+    const showAllBtn = el("button", "editor-btn", "Show all");
+    showAllBtn.addEventListener("click", () => {
+        for (const toggle of layerToggles) {
+            game.layers[toggle.name].visible = true;
+            toggle.input.checked = true;
+        }
+        editor.setStatus("all layers visible");
+    });
+    layersHeader.appendChild(showAllBtn);
+    layers.appendChild(layersHeader);
+
+    for (const name of Object.keys(game.layers) as LayerName[]) {
+        const row = el("label", "editor-layer");
+        const checkbox = el("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = game.layers[name].visible;
+        checkbox.addEventListener("change", () => {
+            game.layers[name].visible = checkbox.checked;
+            editor.setStatus(`${name} ${checkbox.checked ? "visible" : "hidden"}`);
+        });
+
+        row.appendChild(checkbox);
+        row.appendChild(el("span", "editor-field-name", name));
+        layers.appendChild(row);
+        layerToggles.push({ name, input: checkbox });
+    }
+
+    root.appendChild(layers);
     root.appendChild(inspector);
 
     const hint = el(
         "div",
         "editor-hint",
-        "` toggle · drag move · Shift free · Del delete · Ctrl+D duplicate · Esc deselect"
+        "` toggle · drag move · Shift free · wheel zoom · middle-drag pan · Del delete · Ctrl+D duplicate · Esc deselect"
     );
     root.appendChild(hint);
 
@@ -114,6 +149,9 @@ export function createOverlay(editor: Editor): Overlay {
 
     function update() {
         if (document.activeElement !== levelInput) levelInput.value = editor.state.level;
+        for (const toggle of layerToggles) {
+            toggle.input.checked = game.layers[toggle.name].visible;
+        }
         renderInspector();
     }
 
@@ -193,6 +231,20 @@ function renderField(
                 input.appendChild(opt);
             }
             input.value = typeof value === "string" ? value : "";
+            input.addEventListener("change", () => editor.setProp(entry.id, key, input.value));
+            break;
+        }
+        case "layer": {
+            input = el("select");
+            const names = Object.keys(game.layers) as LayerName[];
+            for (const name of names) {
+                const opt = el("option", undefined, name);
+                opt.value = name;
+                input.appendChild(opt);
+            }
+            input.value = typeof value === "string" && names.includes(value as LayerName)
+                ? value
+                : names[0] ?? "";
             input.addEventListener("change", () => editor.setProp(entry.id, key, input.value));
             break;
         }

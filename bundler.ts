@@ -1,49 +1,60 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'node:url';
+
+/** Extensions that are allowed to become bundled aliases. */
+const ASSET_EXTENSIONS = new Set([
+    '.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.svg',
+    '.ogg', '.mp3', '.wav', '.m4a', '.flac', '.aac',
+]);
+
+type Asset = { alias: string, src: string };
 
 // Function to recursively scan directories and collect file paths
-function scanDirectory(directory: string, dirName: string, basePath: string = '') {
-    const result: Array<{ alias: string, src: string }> = [];
-    const items = fs.readdirSync(directory);
+function scanDirectory(directory: string, dirName: string, basePath: string = ''): Asset[] {
+    const result: Asset[] = [];
+    const items = fs.readdirSync(directory).sort();
 
     for (const item of items) {
         if (item.startsWith('.')) continue;
         const itemPath = path.join(directory, item);
         const stats = fs.statSync(itemPath);
-        if (itemPath.endsWith('.css')) continue;
 
         if (stats.isDirectory()) {
             // If it's a directory, recursively scan it
-            const nestedResults = scanDirectory(
+            result.push(...scanDirectory(
                 itemPath,
                 dirName,
                 path.join(basePath, item)
-            );
-
-            // Merge nested results into our result object
-            result.push(...nestedResults);
-        } else {
-            // If it's a file, add it to our results
-            // Create the key by removing file extension and replacing any path separators with hyphens
-            const relativePath = path.join(basePath, item);
-            const key = relativePath
-                .replace(/\.[^/.]+$/, '') // Remove file extension
-                .split(path.sep)
-                .join('-');
-
-            // Store the path with forward slashes for consistency
-            result.push({
-                alias: key,
-                src: './' + dirName + '/' + relativePath.split(path.sep).join('/')
-            });
+            ));
+            continue;
         }
+
+        const extension = path.extname(item).toLowerCase();
+        if (!ASSET_EXTENSIONS.has(extension)) {
+            console.warn(`[bundle] skipping ${path.relative('public', itemPath)} (unsupported extension)`);
+            continue;
+        }
+
+        // Create the key by removing file extension and replacing any path separators with hyphens
+        const relativePath = path.join(basePath, item);
+        const key = relativePath
+            .replace(/\.[^/.]+$/, '') // Remove file extension
+            .split(path.sep)
+            .join('-');
+
+        // Store the path with forward slashes for consistency
+        result.push({
+            alias: key,
+            src: './' + dirName + '/' + relativePath.split(path.sep).join('/')
+        });
     }
     return result;
 }
 
 // Function to generate TypeScript content
-function generateTsContent(name: string, assets: Array<{ alias: string, src: string }>): string {
-    const assetsString = assets.map(asset => 
+function generateTsContent(name: string, assets: Asset[]): string {
+    const assetsString = assets.map(asset =>
         `    {\n      alias: "${asset.alias}",\n      src: "${asset.src}"\n    }`
     ).join(',\n');
 
@@ -70,13 +81,25 @@ function generateBundleTs(directory: string, name: string) {
     const dir = "public/" + directory;
     // Check if public directory exists
     if (!fs.existsSync(dir)) {
-        console.error('Error: '+directory+' directory not found');
+        console.error('Error: ' + directory + ' directory not found');
         process.exit(1);
     }
 
     // Scan the directory
     console.log(`Scanning ${directory}`);
     const assets = scanDirectory(dir, directory);
+
+    // Ensure aliases are unique, otherwise one asset silently shadows another
+    const seen = new Map<string, string>();
+    for (const asset of assets) {
+        const previous = seen.get(asset.alias);
+        if (previous) {
+            throw new Error(
+                `Duplicate asset alias "${asset.alias}" from "${previous}" and "${asset.src}"`
+            );
+        }
+        seen.set(asset.alias, asset.src);
+    }
 
     // Ensure src directory exists
     const srcDir = path.resolve('src');
@@ -95,10 +118,12 @@ function generateBundleTs(directory: string, name: string) {
     console.log(`Found ${assets.length} files`);
 }
 
-function generateBundles() {
+export function generateBundles() {
     generateBundleTs('img', 'bundle');
     generateBundleTs('audio', 'bundle_sound');
 }
 
-// Run the function
-generateBundles();
+// Run when executed directly (`node bundler.ts`), not when imported.
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+    generateBundles();
+}

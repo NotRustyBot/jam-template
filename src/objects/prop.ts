@@ -1,43 +1,46 @@
-import { Color, Sprite } from "pixi.js";
+import { Color, Sprite, Texture } from "pixi.js";
 import { asset } from "../util";
-import { GameObject, registerObject, type Props, type Schema } from "../gameObject";
-import { game } from "../game";
+import { applyProps, GameObject, registerObject, type ObjectProps, type Schema } from "../gameObject";
+import { game, type LayerName } from "../game";
+
+const schema = {
+    image: { kind: "asset", bundle: "bundle" },
+    scale: { kind: "number", min: 0, step: 0.1 },
+    flipX: { kind: "boolean" },
+    tint: { kind: "color" },
+    depth: { kind: "layer" },
+} as const satisfies Schema;
 
 export class Prop extends GameObject {
     static override type = "prop";
-    static override schema: Schema = {
-        image: { kind: "asset", bundle: "bundle" },
-        scale: { kind: "number", min: 0, step: 0.1 },
-        flipX: { kind: "boolean" },
-        tint: { kind: "color" },
-        depth: { kind: "enum", options: ["background", "entity", "foreground"] },
-    };
+    static override schema = schema;
 
     image = "";
     scale = 1;
     flipX = false;
     tint = "#ffffff";
-    depth: "background" | "entity" | "foreground" = "entity";
+    depth: LayerName = "entity";
 
     sprite = new Sprite();
 
-    constructor(props: Props = {}) {
+    constructor(props: ObjectProps<typeof schema> = {}) {
         super(["drawable"], props);
+        applyProps(this, props);
 
-        this.image = props.image ?? this.image;
-        this.scale = props.scale ?? this.scale;
-        this.flipX = props.flipX ?? this.flipX;
-        this.tint = props.tint ?? this.tint;
-        this.depth = props.depth ?? this.depth;
+        this.container.addChild(this.sprite);
+        this.refresh();
+    }
+
+    refresh(): void {
+        if (this.container.parent !== game.layers[this.depth]) {
+            game.layers[this.depth].addChild(this.container);
+        }
 
         this.sprite.anchor.set(0.5);
-        if (this.image) this.sprite.texture = asset(this.image);
+        this.sprite.texture = this.image ? asset(this.image) : Texture.EMPTY;
         this.sprite.scale.set(this.scale, this.scale);
         if (this.flipX) this.sprite.scale.x *= -1;
         this.sprite.tint = new Color(this.tint).toNumber();
-
-        this.container.addChild(this.sprite);
-        game.layers[this.depth].addChild(this.container);
     }
 }
 

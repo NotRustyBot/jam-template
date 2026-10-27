@@ -1,34 +1,38 @@
 import { Color, Graphics } from "pixi.js";
-import { GameObject, registerObject, type Props, type Schema } from "../gameObject";
-import { game } from "../game";
+import { applyProps, GameObject, registerObject, type ObjectProps, type Schema } from "../gameObject";
+import { game, type LayerName } from "../game";
+
+const schema = {
+    radius: { kind: "number", min: 2, step: 1 },
+    color: { kind: "color" },
+    shape: { kind: "enum", options: ["circle", "square"] },
+    depth: { kind: "layer" },
+} as const satisfies Schema;
 
 export class Marker extends GameObject {
     static override type = "marker";
-    static override schema: Schema = {
-        radius: { kind: "number", min: 2, step: 1 },
-        color: { kind: "color" },
-        shape: { kind: "enum", options: ["circle", "square"] },
-        depth: { kind: "enum", options: ["background", "entity", "foreground"] },
-    };
+    static override schema = schema;
 
     radius = 24;
     color = "#ffcc00";
     shape: "circle" | "square" = "circle";
-    depth: "background" | "entity" | "foreground" = "entity";
+    depth: LayerName = "entity";
 
     graphics = new Graphics();
 
-    constructor(props: Props = {}) {
+    constructor(props: ObjectProps<typeof schema> = {}) {
         super(["drawable"], props);
-
-        this.radius = props.radius ?? this.radius;
-        this.color = props.color ?? this.color;
-        this.shape = props.shape ?? this.shape;
-        this.depth = props.depth ?? this.depth;
+        applyProps(this, props);
 
         this.container.addChild(this.graphics);
+        this.refresh();
+    }
+
+    refresh(): void {
+        if (this.container.parent !== game.layers[this.depth]) {
+            game.layers[this.depth].addChild(this.container);
+        }
         this.redraw();
-        game.layers[this.depth].addChild(this.container);
     }
 
     redraw() {

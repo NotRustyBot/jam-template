@@ -10,6 +10,9 @@ export class Gizmo {
     private startWorld = { x: 0, y: 0 };
     private startPos = { x: 0, y: 0 };
 
+    private panning = false;
+    private panLast = { x: 0, y: 0 };
+
     constructor(private editor: Editor) {
         game.app.stage.addChild(this.graphics);
 
@@ -18,6 +21,12 @@ export class Gizmo {
         game.app.stage.on("pointerdown", this.onDown);
         game.app.stage.on("globalpointermove", this.onMove);
         window.addEventListener("pointerup", this.onUp);
+
+        // Editor-only free camera: middle-drag to pan, wheel to zoom.
+        game.app.canvas.addEventListener("pointerdown", this.onPanDown);
+        window.addEventListener("pointermove", this.onPanMove);
+        window.addEventListener("pointerup", this.onPanUp);
+        game.app.canvas.addEventListener("wheel", this.onWheel, { passive: false });
 
         game.app.ticker.add(() => this.redraw());
     }
@@ -28,9 +37,11 @@ export class Gizmo {
     }
 
     private onDown = (e: FederatedPointerEvent) => {
-        if (!this.editor.state.visible) return;
+        if (!this.editor.state.visible || e.button !== 0) return;
 
-        const hits = [...this.editor.state.instances.entries()].reverse();
+        const hits = [...this.editor.state.instances.entries()]
+            .filter(([, obj]) => obj.container.parent?.visible !== false)
+            .reverse();
         const hit = hits.find(([, obj]) =>
             obj.container.getBounds().containsPoint(e.global.x, e.global.y)
         );
@@ -71,6 +82,39 @@ export class Gizmo {
         this.dragId = null;
     };
 
+    private onPanDown = (e: PointerEvent) => {
+        if (!this.editor.state.visible || e.button !== 1) return;
+        e.preventDefault();
+        this.panning = true;
+        this.panLast = { x: e.clientX, y: e.clientY };
+        game.app.canvas.style.cursor = "grabbing";
+    };
+
+    private onPanMove = (e: PointerEvent) => {
+        if (!this.panning) return;
+
+        const camera = game.camera;
+        camera.position.x -= (e.clientX - this.panLast.x) / camera.zoom;
+        camera.position.y -= (e.clientY - this.panLast.y) / camera.zoom;
+        this.panLast = { x: e.clientX, y: e.clientY };
+        camera.update(0);
+    };
+
+    private onPanUp = () => {
+        if (!this.panning) return;
+        this.panning = false;
+        game.app.canvas.style.cursor = "";
+    };
+
+    private onWheel = (e: WheelEvent) => {
+        if (!this.editor.state.visible) return;
+        e.preventDefault();
+
+        const rect = game.app.canvas.getBoundingClientRect();
+        const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+        game.camera.zoomAt(Math.exp(-delta * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+    };
+
     private redraw() {
         if (!this.editor.state.visible) return;
 
@@ -79,7 +123,7 @@ export class Gizmo {
         if (this.editor.state.showGrid) this.drawGrid();
 
         const obj = this.editor.state.selected;
-        if (!obj) return;
+        if (!obj || obj.container.parent?.visible === false) return;
 
         const bounds = obj.container.getBounds();
         this.graphics.rect(
@@ -99,7 +143,9 @@ export class Gizmo {
     }
 
     private drawGrid() {
-        const snap = Math.max(this.editor.state.snap, 4);
+        const snap = Math.max(this.editor.state.snap, 4) * game.camera.zoom;
+        if (snap < 4) return;
+
         const width = game.app.screen.width;
         const height = game.app.screen.height;
         const offsetX = ((game.worldContainer.x % snap) + snap) % snap;

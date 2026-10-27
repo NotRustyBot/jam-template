@@ -1,14 +1,16 @@
-import { Assets, Color, ColorSource, Texture } from "pixi.js";
-import { Howl } from "howler";
-import { type BundleAliases } from "./bundle.ts";
+import { Assets, Color, type ColorSource, type Texture } from "pixi.js";
+import { audio } from "./audio.ts";
+import type { BundleAliases } from "./bundle.ts";
 import { Vector, type Vectorlike } from "./vector.ts";
-import bundle_sound, { Bundle_soundAliases } from "./bundle_sound.ts";
+import type { Bundle_soundAliases } from "./bundle_sound.ts";
 
 
-export function asset(name: BundleAliases): any;
-export function asset(name: string): any;
-export function asset(name: string) {
-    return Assets.get(name);
+export function asset(name: BundleAliases): Texture;
+export function asset(name: string): Texture;
+export function asset(name: string): Texture {
+    const texture = Assets.get(name) as Texture | undefined;
+    if (!texture) throw new Error(`Unknown texture "${name}" (run \`npm run bundle\`)`);
+    return texture;
 }
 
 export function lerp(a: number, b: number, t: number) {
@@ -82,11 +84,9 @@ export function toNearest<T extends { position: Vector }>(position: Vectorlike) 
 }
 
 
+/** Cached Howl for a bundled sound. Prefer `audio.play()` / `audio.loop()`. */
 export function sound(file: Bundle_soundAliases) {
-    const assets = bundle_sound.assets as readonly { alias: string; src: string }[];
-    const path = assets.find((asset) => asset.alias === file)!;
-    if (path == undefined) throw new Error(file + " isnt a valid sound")
-    return new Howl({ src: [path.src], volume: 1 });
+    return audio.howl(file);
 }
 
 export function pixelated(sprite: { texture: Texture }) {

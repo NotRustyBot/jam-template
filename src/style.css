@@ -2,4 +2,51 @@ body {
   margin: 0;
   overflow: hidden;
   background-color: black;
+  user-select: none;
+}
+
+canvas {
+  display: block;
+}
+
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: #9a9a9a;
+  font: 13px/1 ui-monospace, "Cascadia Code", Consolas, monospace;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.boot-screen-text {
+  animation: boot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes boot-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.boot-error {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #180808;
+  color: #ffb0b0;
+  font: 13px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+  white-space: pre-wrap;
+  text-align: center;
+  user-select: text;
 }

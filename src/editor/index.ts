@@ -1,20 +1,27 @@
 import "./editor.css";
 import { clearWorld, spawnWorld, type WorldState } from "../world";
-import { createObject, type GameObject } from "../gameObject";
+import { createObject, GameObject } from "../gameObject";
 import { EditorState, type Editor } from "./state";
 import { createOverlay, type Overlay } from "./overlay";
 import { Gizmo } from "./gizmo";
 import { loadWorldFromServer, saveWorld } from "./persistence";
+import { game } from "../game";
 
 class LevelEditor implements Editor {
     state: EditorState;
     private overlay: Overlay;
     private gizmo: Gizmo;
+    private readonly gamePauseKey: string | null;
 
     constructor(world: WorldState, instances: Map<string, GameObject>) {
         this.state = new EditorState(world, instances);
         this.overlay = createOverlay(this);
         this.gizmo = new Gizmo(this);
+
+        // Escape is the editor's deselect key; don't also toggle the game pause.
+        this.gamePauseKey = game.pauseKey;
+        game.pauseKey = null;
+
         this.bindKeys();
     }
 
@@ -43,9 +50,15 @@ class LevelEditor implements Editor {
 
     setProp(id: string, key: string, value: unknown) {
         const entry = this.state.world.objects.find((o) => o.id === id);
-        if (!entry) return;
+        const obj = this.state.instances.get(id);
+        if (!entry || !obj) return;
+
         entry.props[key] = value;
-        this.rebuild(id);
+        (obj as unknown as Record<string, unknown>)[key] = value;
+
+        // Classes with a custom refresh() update in place; otherwise rebuild.
+        if (obj.refresh === GameObject.prototype.refresh) this.rebuild(id);
+        else obj.refresh();
     }
 
     remove(id: string) {
@@ -120,6 +133,7 @@ class LevelEditor implements Editor {
         this.state.visible = !this.state.visible;
         this.overlay.element.style.display = this.state.visible ? "flex" : "none";
         this.gizmo.setVisible(this.state.visible);
+        game.pauseKey = this.state.visible ? null : this.gamePauseKey;
     }
 
     private bindKeys() {

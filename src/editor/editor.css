@@ -80,6 +80,24 @@
   background: #233a45;
 }
 
+.editor-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor-layer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.editor-layer input {
+  margin: 0;
+  accent-color: #7fe3ff;
+}
+
 .editor-inspector {
   display: flex;
   flex-direction: column;

@@ -5,11 +5,17 @@
   "type": "module",
   "scripts": {
     "bundle": "node bundler.ts",
+    "predev": "npm run bundle",
     "dev": "vite --host",
-    "build": "tsc && vite build",
+    "prebuild": "npm run bundle",
+    "build": "vite build",
+    "check": "tsc --noEmit",
     "upload": "npm run build && 7z a -tzip static.zip .\\dist\\* && butler push static.zip NotRustyBot/__GAME_NAME__:web",
     "preview": "vite preview",
     "setup": "node setup.mjs"
+  },
+  "engines": {
+    "node": ">=22.18"
   },
   "devDependencies": {
     "@types/howler": "^2.2.13",
